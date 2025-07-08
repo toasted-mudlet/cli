@@ -142,4 +142,139 @@ describe("toasted-cli.command", function()
             assert.are.same({}, parsed)
         end)
     end)
+
+    describe("option parsing", function()
+        it("parses boolean flags", function()
+            local parsedOut
+            local root = Command:new{
+                name = "root"
+            }
+            root:option("--verbose -v", "Enable verbose mode"):action(function(args)
+                parsedOut = args
+            end)
+
+            local _, parsed = root:parse({"--verbose"})
+            assert.is_true(parsed["--verbose"])
+            assert.is_true(parsed["-v"])
+            assert.are.same(parsed, parsedOut)
+        end)
+
+        it("parses short flags", function()
+            local root = Command:new{
+                name = "root"
+            }
+            root:option("-f", "Force"):action(function(args)
+            end)
+
+            local _, parsed = root:parse({"-f"})
+            assert.is_true(parsed["-f"])
+        end)
+
+        it("parses options with values (separate)", function()
+            local root = Command:new{
+                name = "root"
+            }
+            root:option("--output -o", "Output file", {
+                argument = true
+            }):action(function(args)
+            end)
+
+            local _, parsed = root:parse({"--output", "file.txt"})
+            assert.are.equal("file.txt", parsed["--output"])
+            assert.are.equal("file.txt", parsed["-o"])
+        end)
+
+        it("parses options with values (equals)", function()
+            local root = Command:new{
+                name = "root"
+            }
+            root:option("--output -o", "Output file", {
+                argument = true
+            }):action(function(args)
+            end)
+
+            local _, parsed = root:parse({"--output=file.txt"})
+            assert.are.equal("file.txt", parsed["--output"])
+            assert.are.equal("file.txt", parsed["-o"])
+        end)
+
+        it("sets default option values", function()
+            local root = Command:new{
+                name = "root"
+            }
+            root:option("--mode", "Mode", {
+                argument = true,
+                default = "prod"
+            }):action(function(args)
+            end)
+
+            local _, parsed = root:parse({})
+            assert.are.equal("prod", parsed["--mode"])
+        end)
+
+        it("warns if an option is specified multiple times", function()
+            local root = Command:new{
+                name = "root"
+            }
+            root:option("--foo", "Foo", {
+                argument = true
+            }):action(function(args)
+            end)
+
+            local _, parsed, warnings = root:parse({"--foo", "bar", "--foo", "baz"})
+            assert.are.equal("baz", parsed["--foo"])
+            assert.is_true(#warnings > 0)
+            assert.is_truthy(warnings[1]:match("specified multiple times"))
+        end)
+
+        it("raises an error for unknown options", function()
+            local root = Command:new{
+                name = "root"
+            }
+            root:option("--foo", "Foo"):action(function(args)
+            end)
+
+            assert.has_error(function()
+                root:parse({"--bar"})
+            end, "Unknown option: --bar")
+        end)
+
+        it("raises an error if a value is required but missing", function()
+            local root = Command:new{
+                name = "root"
+            }
+            root:option("--foo", "Foo", {
+                argument = true
+            }):action(function(args)
+            end)
+
+            assert.has_error(function()
+                root:parse({"--foo"})
+            end, "Option --foo expects a value")
+        end)
+
+        it("parses option value that looks like a flag", function()
+            local root = Command:new{
+                name = "root"
+            }
+            root:option("--foo", "Foo", {
+                argument = true
+            })
+            local _, parsed = root:parse({"--foo", "-bar"})
+            assert.are.equal("-bar", parsed["--foo"])
+        end)
+
+        it("sets all aliases for an option", function()
+            local root = Command:new{
+                name = "root"
+            }
+            root:option("--foo -f", "Foo", {
+                argument = true
+            })
+            local _, parsed = root:parse({"--foo", "bar"})
+            assert.are.equal("bar", parsed["--foo"])
+            assert.are.equal("bar", parsed["-f"])
+        end)
+
+    end)
 end)
