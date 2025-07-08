@@ -1,5 +1,18 @@
 local Command = require("toasted_cli.command")
 
+local function assert_set_equal(t1, t2)
+    assert.are.equal(#t1, #t2)
+    local lookup = {}
+    for _, v in ipairs(t1) do
+        lookup[v] = (lookup[v] or 0) + 1
+    end
+    for _, v in ipairs(t2) do
+        assert.is_not_nil(lookup[v], "Missing element: " .. tostring(v))
+        lookup[v] = lookup[v] - 1
+        assert.is_true(lookup[v] >= 0, "Extra element: " .. tostring(v))
+    end
+end
+
 describe("toasted-cli.command", function()
 
     describe("subcommand dispatching", function()
@@ -76,9 +89,11 @@ describe("toasted-cli.command", function()
             }
             root:subcommand("hello", "Say hello")
 
-            assert.has_error(function()
-                root:parse({"goodbye"})
-            end, "Unknown subcommand: goodbye")
+            local result, _, _, failures = root:parse({"goodbye"})
+            assert.is_nil(result)
+            assert.is_truthy(failures and #failures > 0)
+            assert.are.equal("UNKNOWN_SUBCOMMAND", failures[1].code)
+            assert.are.equal("goodbye", failures[1].field)
         end)
 
         it("raises an error if too few arguments are provided", function()
@@ -87,11 +102,14 @@ describe("toasted-cli.command", function()
             }
             root:subcommand("delete", "Delete entity"):argument("entity", "Entity type"):argument("id", "Entity ID")
                 :action(function(args)
+                    return "ACTION_CALLED"
                 end)
 
-            assert.has_error(function()
-                root:parse({"delete", "user"})
-            end, "Missing required argument: id")
+            local result, _, _, failures = root:parse({"delete", "user"})
+            assert.is_nil(result)
+            assert.is_truthy(failures and #failures > 0)
+            assert.are.equal("ARGUMENT_MISSING", failures[1].code)
+            assert.are.equal("id", failures[1].field)
         end)
 
         it("raises an error if too many arguments are provided", function()
@@ -100,11 +118,14 @@ describe("toasted-cli.command", function()
             }
             root:subcommand("delete", "Delete entity"):argument("entity", "Entity type"):argument("id", "Entity ID")
                 :action(function(args)
+                    return "ACTION_CALLED"
                 end)
 
-            assert.has_error(function()
-                root:parse({"delete", "user", "user_1", "extra"})
-            end, "Unexpected extra argument: extra")
+            local result, _, _, failures = root:parse({"delete", "user", "user_1", "extra"})
+            assert.is_nil(result)
+            assert.is_truthy(failures and #failures > 0)
+            assert.are.equal("ARGUMENT_EXTRA", failures[1].code)
+            assert.are.equal("extra", failures[1].field)
         end)
 
         it("passes positional arguments to actions and returns them in parsed table", function()
@@ -134,10 +155,7 @@ describe("toasted-cli.command", function()
             }
             root:subcommand("noop", "No operation")
 
-            local result, parsed
-            assert.has_no.errors(function()
-                result, parsed = root:parse({"noop"})
-            end)
+            local result, parsed = root:parse({"noop"})
             assert.is_nil(result)
             assert.are.same({}, parsed)
         end)
@@ -223,8 +241,9 @@ describe("toasted-cli.command", function()
 
             local _, parsed, warnings = root:parse({"--foo", "bar", "--foo", "baz"})
             assert.are.equal("baz", parsed["--foo"])
-            assert.is_true(#warnings > 0)
-            assert.is_truthy(warnings[1]:match("specified multiple times"))
+            assert.is_truthy(warnings and #warnings > 0)
+            assert.are.equal("OPTION_MULTIPLE", warnings[1].code)
+            assert.are.equal("--foo", warnings[1].field)
         end)
 
         it("raises an error for unknown options", function()
@@ -234,23 +253,28 @@ describe("toasted-cli.command", function()
             root:option("--foo", "Foo"):action(function(args)
             end)
 
-            assert.has_error(function()
-                root:parse({"--bar"})
-            end, "Unknown option: --bar")
+            local result, _, _, failures = root:parse({"--bar"})
+            assert.is_nil(result)
+            assert.is_truthy(failures and #failures > 0)
+            assert.are.equal("OPTION_UNKNOWN", failures[1].code)
+            assert.are.equal("--bar", failures[1].field)
         end)
 
         it("raises an error if a value is required but missing", function()
             local root = Command:new{
                 name = "root"
             }
-            root:option("--foo", "Foo", {
+            root:option("--foo --foo2 -f -f2", "Foo", {
                 argument = true
             }):action(function(args)
             end)
 
-            assert.has_error(function()
-                root:parse({"--foo"})
-            end, "Option --foo expects a value")
+            local result, _, _, failures = root:parse({"--foo"})
+            assert.is_nil(result)
+            assert.is_truthy(failures and #failures > 0)
+            assert.are.equal("OPTION_VALUE_MISSING", failures[1].code)
+            assert.are.equal("--foo", failures[1].field)
+            assert_set_equal({"--foo", "-f", "--foo2", "-f2"}, failures[1].aliases)
         end)
 
         it("parses option value that looks like a flag", function()
@@ -275,6 +299,48 @@ describe("toasted-cli.command", function()
             assert.are.equal("bar", parsed["--foo"])
             assert.are.equal("bar", parsed["-f"])
         end)
+    end)
 
+    describe("post-parse spec failures", function()
+        local specs = require("toasted_cli.specification")
+        local RequireBarSpec = {
+            code = "FOO_MUST_BE_BAR",
+            message = "The value for --foo must be 'bar'",
+            isSatisfiedBy = function(self, context)
+                local val = context:get("--foo")
+                if val ~= "bar" then
+                    return false, {
+                        field = "--foo",
+                        value = val
+                    }
+                end
+                return true
+            end
+        }
+        setmetatable(RequireBarSpec, {
+            __index = specs.Specification
+        })
+
+        it("getUnsatisfiedSpecs attaches the parser context", function()
+            local root = Command:new{
+                name = "root"
+            }
+            root:option("--foo", "Foo", {
+                argument = true,
+                specs = {RequireBarSpec}
+            })
+            local _, parsed, _, failures = root:parse({"--foo", "baz"})
+            local found = false
+            for _, failure in ipairs(failures) do
+                if failure.code == "FOO_MUST_BE_BAR" then
+                    found = true
+                    assert.is_table(failure.context)
+                    assert.are.equal(parsed, failure.context.parsed)
+                    assert.are.equal(root, failure.context.command)
+                    assert.is_function(failure.context.get)
+                end
+            end
+            assert.is_true(found, "Expected to find FOO_MUST_BE_BAR failure")
+        end)
     end)
 end)
