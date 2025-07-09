@@ -2,6 +2,14 @@
 
 A minimal, extensible command-line interface (CLI) library for Lua.
 
+## Features
+
+- Runtime agnostic - works in shell scripts, REPLs, and any Lua environment
+- Declarative command and subcommand trees
+- Positional arguments and options
+- Extensible validation and user feedback based on specifications
+- Default renderer for user feedback and help text generation
+
 ## Requirements
 
 - **[Lua 5.1](https://www.lua.org/versions.html#5.1)** or higher (including LuaJIT)
@@ -25,22 +33,37 @@ Define your CLI command tree and parse arguments:
 ```
 local Command = require("toasted_cli.command")
 
-local root = Command:new{ name = "root", description = "My CLI" }
-local valid_scopes = { map = true, area = true }
-local scope = root:subcommand("scope", "Scoped operations", {
-    matchFunc = function(input)
-        if valid_scopes[input] then return input end
-    end
-})
+local root = Command:new{ name = "todo", description = "A simple todo CLI" }
 
-scope:subcommand("list", "List rooms")
+root:subcommand("add", "Add a new todo item")
+    :argument("text", "The todo text")
     :action(function(args)
-        print("Listing rooms for scope:", args.scope)
+        print("Added todo:", args.text)
+    end)
+    
+root:subcommand("list", "List all todo items")
+    :action(function(args)
+        print("Listing all todos...")
+        -- (Your code to list todos here)
     end)
 
-root:parse({"map", "list"})
--- Output: Listing rooms for scope: map
+root:subcommand("remove", "Remove a todo item by number")
+    :argument("number", "The todo number")
+    :action(function(args)
+        print("Removed todo number:", args.number)
+    end)
+
+root:parse({"add", "Buy milk"})
+-- Output: Added todo: Buy milk
+
+root:parse({"list"})
+-- Output: Listing all todos...
+
+root:parse({"remove", "2"})
+-- Output: Removed todo number: 2
 ```
+
+See other examples in the [`examples/`](examples/) directory.
 
 ## Attribution
 
