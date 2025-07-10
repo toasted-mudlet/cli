@@ -5,9 +5,9 @@ local greet = Command:new{
     name = "greet",
     description = "Greet someone"
 }
-                     :argument("name", "Name of the person to greet")
-                     :option("--shout -s", "Shout the greeting")
-                     :action(function(parsed)
+:argument("name", "Name of the person to greet")
+:option("--shout -s", "Shout the greeting")
+:action(function(parsed)
     local greeting = "Hello, " .. (parsed.name or "world")
     if parsed["--shout"] then
         greeting = string.upper(greeting) .. "!"
@@ -19,9 +19,9 @@ local echo = Command:new{
     name = "echo",
     description = "Echo input"
 }
-                    :argument("text", "Text to echo")
-                    :option("--repeat -r", "Repeat count", { default = 1 })
-                    :action(function(parsed)
+:argument("text", "Text to echo")
+:option("--repeat -r", "Repeat count", { default = 1 })
+:action(function(parsed)
     for _ = 1, tonumber(parsed["--repeat"]) or 1 do
         print(parsed.text)
     end
