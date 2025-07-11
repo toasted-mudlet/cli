@@ -7,7 +7,7 @@ source = {
 }
 
 description = {
-    summary = "Minimal, extensible command-line interface (CLI) library for Lua.",
+    summary = "Minimal, extensible command-line interface (CLI) library for Lua",
     detailed = [[
         Toasted CLI is a minimal and extensible command-line interface library
         for Lua 5.1 and newer, including LuaJIT. It is runtime-agnostic and
