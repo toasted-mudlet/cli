@@ -65,6 +65,12 @@ root:parse({"remove", "2"})
 
 See other examples in the [`examples/`](examples/) directory.
 
+> Use [`set_paths.lua`](set_paths.lua) to run examples locally:
+>
+> ```
+> lua -l set_paths examples/basic_usage.lua
+> ```
+
 ## Attribution
 
 If you create a new project based substantially on this CLI library, please
@@ -80,3 +86,4 @@ Copyright © 2025 github.com/toasted323
 
 This project is licensed under the MIT License.  
 See [LICENSE](LICENSE) in the root of this repository for full details.
+```
