@@ -7,7 +7,7 @@ Command.__index = Command
 
 local Context = require("toasted_cli.context")
 local specs = require("toasted_cli.specification")
-local internal = require("toasted_cli.specification.internal")
+local cli_parse_specs = require("toasted_cli.internal.cli_parse_specs")
 local cli_specs = require("toasted_cli.cli_specs")
 
 --- Create a new Command object.
@@ -129,7 +129,7 @@ function Command:parse(args, argIdx, parsed, warnings)
             end
         end
 
-        return nil, parsed, warnings, {internal.unknownSubcommandSpec:withDetail{
+        return nil, parsed, warnings, { cli_parse_specs.unknownSubcommandSpec:withDetail{
             field = arg
         }}
     end
@@ -189,7 +189,7 @@ function Command:parse(args, argIdx, parsed, warnings)
                     end
                     seenOptions[optKey] = true
                 else
-                    table.insert(failures, internal.unknownOptionSpec:withDetail{
+                    table.insert(failures, cli_parse_specs.unknownOptionSpec:withDetail{
                         field = arg,
                         aliases = nil
                     })
@@ -206,7 +206,7 @@ function Command:parse(args, argIdx, parsed, warnings)
                 if opt.argument then
                     local val = args[i + 1]
                     if not val then
-                        table.insert(failures, internal.missingOptionValueSpec:withDetail{
+                        table.insert(failures, cli_parse_specs.missingOptionValueSpec:withDetail{
                             field = arg,
                             aliases = opt.names
                         })
@@ -230,14 +230,14 @@ function Command:parse(args, argIdx, parsed, warnings)
 
     for idx, argDef in ipairs(self.arguments) do
         if positionals[idx] == nil then
-            table.insert(failures, internal.missingArgumentSpec:withDetail{
+            table.insert(failures, cli_parse_specs.missingArgumentSpec:withDetail{
                 field = argDef.name
             })
         end
         parsed[argDef.name] = positionals[idx]
     end
     if #positionals > #self.arguments then
-        table.insert(failures, internal.extraArgumentSpec:withDetail{
+        table.insert(failures, cli_parse_specs.extraArgumentSpec:withDetail{
             field = positionals[#self.arguments + 1]
         })
     end
