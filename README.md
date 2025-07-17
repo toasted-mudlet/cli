@@ -31,7 +31,7 @@ luarocks install --tree=lua_modules toasted_cli
 Define your CLI command tree and parse arguments:
 
 ```
-local Command = require("toasted_cli.command")
+local Command = require("toasted_cli.Command")
 
 local root = Command:new{ name = "todo", description = "A simple todo CLI" }
 

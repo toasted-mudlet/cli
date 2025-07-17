@@ -5,7 +5,7 @@
 local Command = {}
 Command.__index = Command
 
-local Context = require("toasted_cli.context")
+local Context = require("toasted_cli.Context")
 local specs = require("toasted_cli.specification")
 local cli_parse_specs = require("toasted_cli.internal.cli_parse_specs")
 local cli_specs = require("toasted_cli.cli_specs")

@@ -1,4 +1,4 @@
-local Context = require("toasted_cli.context")
+local Context = require("toasted_cli.Context")
 
 describe("Context", function()
     it("stores parsed table and command reference", function()

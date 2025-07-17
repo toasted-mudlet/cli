@@ -1,4 +1,4 @@
-local Command = require("toasted_cli.command")
+local Command = require("toasted_cli.Command")
 
 local function assert_set_equal(t1, t2)
     assert.are.equal(#t1, #t2)

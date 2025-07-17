@@ -27,9 +27,9 @@ build = {
     modules = {
         ["toasted_cli"] = "src/toasted_cli/init.lua",
         ["toasted_cli.cli_specs"] = "src/toasted_cli/cli_specs.lua",
-        ["toasted_cli.command"] = "src/toasted_cli/command.lua",
-        ["toasted_cli.context"] = "src/toasted_cli/context.lua",
-        ["toasted_cli.renderer"] = "src/toasted_cli/renderer.lua",
+        ["toasted_cli.Command"] = "src/toasted_cli/Command.lua",
+        ["toasted_cli.Context"] = "src/toasted_cli/Context.lua",
+        ["toasted_cli.Renderer"] = "src/toasted_cli/Renderer.lua",
         ["toasted_cli.specification"] = "src/toasted_cli/specification.lua",
         ["toasted_cli.internal.cli_parse_specs"] = "src/toasted_cli/internal/cli_parse_specs.lua"
     }

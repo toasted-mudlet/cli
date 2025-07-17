@@ -1,5 +1,5 @@
-local Command = require("toasted_cli.command")
-local Renderer = require("toasted_cli.renderer")
+local Command = require("toasted_cli.Command")
+local Renderer = require("toasted_cli.Renderer")
 
 local greet = Command:new{
     name = "greet",
