@@ -63,7 +63,6 @@ function Renderer.renderWarnings(warnings)
     return table.concat(lines, "\n")
 end
 
-
 --- Render help text for a command, and list subcommands.
 -- @tparam table command The command object.
 -- @treturn string The help text.
@@ -91,28 +90,31 @@ function Renderer.renderHelp(command)
         end
     end
 
-    if command.subcommands and #command.subcommands > 0 then
+    local ungrouped = (command.subcommands and #command.subcommands > 0) and command.subcommands or nil
+    local groups = command.subcommand_groups
+
+    if ungrouped or (groups and #groups > 0) then
         table.insert(lines, "\nSubcommands:")
-        if command.subcommand_groups then
-            for _, group in ipairs(command.subcommand_groups) do
+        if ungrouped then
+            for _, sub in ipairs(ungrouped) do
+                local name = sub.name or ""
+                local desc = sub.description or ""
+                table.insert(lines, string.format("  %-12s %s", name, desc))
+            end
+        end
+        if groups then
+            for _, group in ipairs(groups) do
                 table.insert(lines, string.format("  %s:", group.name))
-                for _, sub in ipairs(group.subcommands) do
+                for _, sub in ipairs(group.subcommands or {}) do
                     local name = sub.name or ""
                     local desc = sub.description or ""
                     table.insert(lines, string.format("    %-10s %s", name, desc))
                 end
-            end
-        else
-            for _, sub in ipairs(command.subcommands) do
-                local name = sub.name or ""
-                local desc = sub.description or ""
-                table.insert(lines, string.format("  %-12s %s", name, desc))
             end
         end
     end
 
     return table.concat(lines, "\n")
 end
-
 
 return Renderer
